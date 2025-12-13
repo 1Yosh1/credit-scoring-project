@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Service 1: The Kitchen (API)
+  backend:
+    build: .
+    container_name: credit-api
+    command: uvicorn src.app:app --host 0.0.0.0 --port 80
+    ports:
+      - "80:80"
+    networks:
+      - credit-network
+
+  # Service 2: The Waiter (Dashboard)
+  frontend:
+    build: .
+    container_name: credit-dashboard
+    # Override the command to run Streamlit instead of FastAPI
+    command: streamlit run src/dashboard.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      # This tells Streamlit to talk to the 'backend' container, not localhost
+      - API_URL=http://backend:80/predict
+    depends_on:
+      - backend
+    networks:
+      - credit-network
+
+# Create a private network so they can talk to each other
+networks:
+  credit-network:
+    driver: bridge
