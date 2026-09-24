@@ -72,6 +72,9 @@ project deliberately keeps out of scope.
   eliminating the train/serve skew that plagues notebook-first projects.
 - **`src/model.py`** — model loading and scoring, independent of the web layer so
   it can be unit-tested without FastAPI.
+- **`src/explain.py`** — SHAP-based per-prediction explanations: top risk factors
+  with readable labels and impact in percentage points of default probability
+  (exact sigmoid-telescoping conversion from log-odds contributions).
 - **`src/app.py`** — the API: input validation, `/predict`, `/health` (used by the
   Docker healthcheck and CI), and `/model-info` (exposes training metrics).
 - **`src/dashboard.py`** — the Streamlit UI, with a live API health indicator and
@@ -139,9 +142,27 @@ curl -X POST http://localhost:8000/predict \
 {
   "default_probability": 0.711,
   "risk_level": "High",
-  "threshold": 0.489
+  "threshold": 0.489,
+  "explanation": {
+    "base_probability": 0.5005,
+    "probability_additive": 0.711,
+    "top_factors": [
+      { "label": "External credit score", "value": "0.14",
+        "direction": "increases_risk", "impact_pp": 29.69 },
+      { "label": "Total income", "value": "$202,500",
+        "direction": "decreases_risk", "impact_pp": -8.47 },
+      { "label": "Repayment length", "value": "0.06",
+        "direction": "increases_risk", "impact_pp": 1.57 }
+    ]
+  }
 }
 ```
+
+The `explanation` block is SHAP-based: each factor's `impact_pp` is its exact
+contribution to P(default) in percentage points, and all contributions sum to the
+gap between the population baseline (0.50) and this prediction. The dashboard
+renders the same factors under "Top risk factors" so a loan officer can see *why*
+an application was flagged.
 
 ## Modeling decisions
 
@@ -207,7 +228,7 @@ Tests use synthetic artifacts, so the full suite runs in seconds with no dataset
 
 ## Roadmap
 
+- [x] SHAP-based per-prediction explanations in the API and dashboard
 - [ ] Join supplementary tables (bureau, previous applications) to push AUC toward 0.75+
 - [ ] Isotonic/Platt calibration of probabilities instead of rank-based thresholding
-- [ ] SHAP-based per-prediction explanations in the API and dashboard
 - [ ] Serve batch predictions from the raw CSV

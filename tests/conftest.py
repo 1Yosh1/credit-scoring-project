@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from sklearn.preprocessing import StandardScaler
-from sklearn.tree import DecisionTreeClassifier
+from xgboost import XGBClassifier
 
 from src.features import MODEL_FEATURES, SCALED_FEATURES
 
@@ -17,9 +17,11 @@ from src.features import MODEL_FEATURES, SCALED_FEATURES
 def model_dir(tmp_path, monkeypatch):
     """Create synthetic model artifacts and point src.model at them.
 
-    The tree learns y = (EXT_SOURCE_MEAN < 0.5) so /predict probabilities vary
-    meaningfully with the bureau score, and the scaler is fit on exactly the
-    serving columns (8 features), mirroring the real training pipeline.
+    The model learns y = (EXT_SOURCE_MEAN < 0.5) so /predict probabilities vary
+    meaningfully with the bureau score. We deliberately use an XGBClassifier
+    (not an sklearn tree) so the artifact matches production: binary:logistic
+    XGBoost, whose SHAP values live in log-odds space -- the space the
+    explanation layer's sigmoid walk assumes.
     """
     rng = np.random.default_rng(42)
     n = 300
@@ -33,7 +35,10 @@ def model_dir(tmp_path, monkeypatch):
     y = (X["EXT_SOURCE_MEAN"] < 0.5).astype(int)
 
     scaler = StandardScaler().fit(X[SCALED_FEATURES])
-    model = DecisionTreeClassifier(max_depth=2, random_state=42).fit(X, y)
+    model = XGBClassifier(
+        n_estimators=20, max_depth=2, learning_rate=0.3,
+        eval_metric="logloss", random_state=42, n_jobs=1,
+    ).fit(X, y)
 
     joblib.dump(model, tmp_path / "credit_model.pkl")
     joblib.dump(list(X.columns), tmp_path / "model_columns.pkl")

@@ -23,9 +23,28 @@ class LoanApplication(BaseModel):
         return v
 
 
+class RiskFactor(BaseModel):
+    """One driver of a prediction, with human-readable impact."""
+
+    feature: str
+    label: str
+    value: str | None = None
+    direction: str
+    impact_pp: float  # impact on P(default) in percentage points
+
+
+class Explanation(BaseModel):
+    """SHAP-based explanation of a prediction."""
+
+    base_probability: float
+    probability_additive: float
+    top_factors: list[RiskFactor]
+
+
 class PredictionResponse(BaseModel):
     """Scored application returned by /predict."""
 
     default_probability: float
     risk_level: str
     threshold: float
+    explanation: Explanation | None = None

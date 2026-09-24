@@ -31,7 +31,9 @@ def test_score_returns_probability_and_risk(model_dir, sample_application):
     bundle = load_model_bundle()
     result = bundle.score(sample_application, threshold=0.20)
 
-    assert set(result) == {"default_probability", "risk_level", "threshold"}
+    assert set(result) == {
+        "default_probability", "risk_level", "threshold", "explanation"
+    }
     assert 0.0 <= result["default_probability"] <= 1.0
     assert result["risk_level"] in ("High", "Low")
 

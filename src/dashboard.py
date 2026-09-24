@@ -98,6 +98,23 @@ if submitted:
             st.write("**Recommendation:** Approve loan.")
 
         st.caption(f"Decision threshold: P(default) > {threshold:.0%} ⇒ High risk")
+
+        explanation = result.get("explanation")
+        if explanation:
+            st.markdown("##### Top risk factors")
+            for factor in explanation["top_factors"]:
+                arrow = "↑" if factor["direction"] == "increases_risk" else "↓"
+                value_part = f" — `{factor['value']}`" if factor.get("value") else ""
+                st.markdown(
+                    f"{arrow} **{factor['label']}**{value_part}: "
+                    f"**{'+' if factor['impact_pp'] >= 0 else ''}{factor['impact_pp']:.1f} pp** "
+                    "default risk"
+                )
+            st.caption(
+                f"Population baseline P(default) ≈ {explanation['base_probability']:.0%}. "
+                "Factors are SHAP contributions (percentage points) and sum to the gap "
+                "between the baseline and this prediction."
+            )
     elif response.status_code == 422:
         detail = response.json().get("detail", "Invalid input")
         st.warning("The application was rejected by input validation.")

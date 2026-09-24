@@ -13,6 +13,7 @@ from functools import lru_cache
 import joblib
 
 from src.config import METRICS_PATH, MODEL_COLUMNS_PATH, MODEL_PATH, SCALER_PATH
+from src.explain import explain_prediction
 from src.features import build_features, decide_risk, scale_features
 
 logger = logging.getLogger(__name__)
@@ -37,13 +38,24 @@ class ModelBundle:
         return float(proba)
 
     def score(self, application: dict, threshold: float) -> dict:
-        """Full business response: probability plus thresholded risk level."""
+        """Full business response: probability, risk level, and explanation."""
         probability = self.predict_default_probability(application)
-        return {
+        result = {
             "default_probability": probability,
             "risk_level": decide_risk(probability, threshold),
             "threshold": threshold,
         }
+        try:
+            result["explanation"] = self.explain(application)
+        except Exception:  # noqa: BLE001 - never fail a prediction over its explanation
+            logger.warning("Explanation failed; serving prediction without it", exc_info=True)
+        return result
+
+    def explain(self, application: dict) -> dict:
+        """SHAP-based top risk factors for one application."""
+        features = build_features(application)
+        scaled = scale_features(features, self.scaler) if self.scaler is not None else features
+        return explain_prediction(self.model, scaled, raw_values=features.iloc[0].to_dict())
 
 
 @lru_cache(maxsize=1)
