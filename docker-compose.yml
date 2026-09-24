@@ -1,33 +1,49 @@
-version: '3.8'
-
 services:
-  # Service 1: The Kitchen (API)
+  # --- The "Brain": FastAPI inference service -----------------------------
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: credit-scoring-api
     container_name: credit-api
-    command: uvicorn src.app:app --host 0.0.0.0 --port 80
     ports:
       - "80:80"
+    environment:
+      - LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       - credit-network
 
-  # Service 2: The Waiter (Dashboard)
+  # --- The "Face": Streamlit dashboard for loan officers -------------------
   frontend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    image: credit-scoring-dashboard
     container_name: credit-dashboard
-    # Override the command to run Streamlit instead of FastAPI
-    command: streamlit run src/dashboard.py --server.port 8501 --server.address 0.0.0.0
     ports:
       - "8501:8501"
     environment:
-      # This tells Streamlit to talk to the 'backend' container, not localhost
+      # Inside the compose network, the API is reachable as 'backend'
       - API_URL=http://backend:80/predict
+      - API_URL_BASE=http://backend:80
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:8501"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       - credit-network
 
-# Create a private network so they can talk to each other
 networks:
   credit-network:
     driver: bridge

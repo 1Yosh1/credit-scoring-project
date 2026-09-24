@@ -1,5 +1,47 @@
-venv/
-__pycache__/
-.DS_Store
-models/*.pkl
+# --- Data (never commit raw or processed data) ---
 data/
+*.csv
+*.parquet
+*.zip
+
+# --- Models (large binaries; export via DVC/MLflow instead) ---
+models/*
+!models/.gitkeep
+*.pkl
+*.ubj
+*.joblib
+
+# --- MLflow local tracking state ---
+mlruns/
+mlflow.db
+notebooks/mlruns/
+notebooks/mlflow.db
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Notebooks ---
+.ipynb_checkpoints/
+
+# --- DVC (tracked files stay; caches don't) ---
+.dvc/cache/
+
+# --- OS / IDE ---
+.DS_Store
+.idea/
+.vscode/
+
+# --- Environments ---
+.env

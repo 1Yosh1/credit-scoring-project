@@ -1,0 +1,47 @@
+# Training data and notebooks never belong in the image; the model artifacts
+# in models/ ARE shipped in the API image (baked in at build time).
+data/
+notebooks/
+scripts/
+tests/
+*.csv
+*.parquet
+*.zip
+
+# Version control
+.git/
+.gitignore
+.github/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Tooling & docs
+pyproject.toml
+Makefile
+README.md
+LICENSE
+.env
+.env.example
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# MLflow state
+mlruns/
+mlflow.db
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/

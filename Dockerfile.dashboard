@@ -1,4 +1,4 @@
-# --- Base: slim Python image -----------------------------------------------
+# Dashboard image: same app code, but launches Streamlit instead of uvicorn.
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -7,30 +7,26 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /code
 
-# libgomp1 is required by XGBoost; no compiler toolchain is needed since we
-# install wheels only.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libgomp1 \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Dependencies first for better layer caching
 COPY requirements/base.txt /code/requirements/base.txt
 RUN pip install --no-cache-dir -r /code/requirements/base.txt
 
-# Application code
 COPY src /code/src
 
-# Model artifacts (kept out of git; present on the build machine after training)
-COPY models /code/models
+# The dashboard talks to the API container over the compose network and does
+# not load model artifacts itself, but the base requirements install pandas,
+# scikit-learn, and xgboost so both images stay identical and simple.
 
-# Run as a non-root user
 RUN useradd --create-home appuser && chown -R appuser:appuser /code
 USER appuser
 
-EXPOSE 80
+EXPOSE 8501
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -fsS http://localhost:80/health || exit 1
+    CMD curl -fsS -o /dev/null http://localhost:8501 || exit 1
 
-CMD ["uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["streamlit", "run", "src/dashboard.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
