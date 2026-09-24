@@ -6,11 +6,18 @@ Run from the repo root:
 from __future__ import annotations
 
 import nbformat as nbf
+from nbclient import NotebookClient
 
 nb = nbf.v4.new_notebook()
 cells = []
-md = lambda s: cells.append(nbf.v4.new_markdown_cell(s))
-code = lambda s: cells.append(nbf.v4.new_code_cell(s))
+
+
+def md(text: str) -> None:
+    cells.append(nbf.v4.new_markdown_cell(text))
+
+
+def code(source: str) -> None:
+    cells.append(nbf.v4.new_code_cell(source))
 
 # ------------------------------------------------------------------ intro
 md(
@@ -441,18 +448,13 @@ md(
 interactive API docs at `localhost/docs`."""
 )
 
-nb["cells"] = cells
-nb["metadata"]["kernelspec"] = {
+out = nbf.v4.new_notebook()
+out.cells = cells
+out.metadata["kernelspec"] = {
     "display_name": "venv",
     "language": "python",
     "name": "python3",
 }
-
-out = nbf.v4.new_notebook()
-out.cells = cells
-out.metadata = nb.metadata
-
-from nbclient import NotebookClient
 
 client = NotebookClient(out, timeout=600, kernel_name="python3")
 client.execute()
