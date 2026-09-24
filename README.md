@@ -5,6 +5,7 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-red)
 ![Tests](https://img.shields.io/badge/tests-pytest-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+[![CI](https://github.com/1Yosh1/credit-scoring-project/actions/workflows/ci.yml/badge.svg)](https://github.com/1Yosh1/credit-scoring-project/actions/workflows/ci.yml)
 
 An end-to-end machine learning system that scores loan applications for probability
 of default, trained on the [Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk)
